@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical|center_horizontal"
+    tools:context=".MainActivity">
+
+
+
+    <Button
+        android:id="@+id/btnPrefs"
+        android:onClick="openPrefs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Open Prefs" />
+
+    <EditText
+        android:id="@+id/edtStartAddress"
+        android:layout_width="wrap_content"
+        android:layout_marginTop="20dp"
+        android:paddingHorizontal="20dp"
+        android:inputType="number"
+        android:hint="Enter Start Address"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnWriteData"
+        android:layout_marginTop="20dp"
+        android:onClick="writeData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Write Data" />
+
+    <Button
+        android:id="@+id/btnReadData"
+        android:onClick="readData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read Data" />
+
+    <TextView
+        android:layout_marginTop="20dp"
+        android:id="@+id/txtDataRead"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="Hello World!" />
+
+</LinearLayout>
