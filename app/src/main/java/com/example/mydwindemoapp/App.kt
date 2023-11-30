@@ -14,24 +14,24 @@ class App: Application() {
     private var mSerialPort: SerialPort? = null
 
     @Throws(SecurityException::class, IOException::class, InvalidParameterException::class)
-    fun getSerialPort(): SerialPort? {
-        if (mSerialPort == null) {
-            /* Read serial port parameters */
+    fun getSerialPort(): SerialPort {
+        /*if (mSerialPort == null) {
+            *//* Read serial port parameters *//*
             val sp = getSharedPreferences("com.example.mydwindemoapp_preferences", MODE_PRIVATE)
             Log.d("TAG", "SharedPrefs: $sp")
             val path = sp.getString("DEVICE", "")
             Log.d("TAG", "Path: $path")
             val baudrate = sp.getString("BAUDRATE", "-1")?.let { Integer.decode(it) }
             Log.d("TAG", "baudrate: $baudrate")
-            /* Check parameters */
+            *//* Check parameters *//*
             if (path!!.length == 0 || baudrate == -1) {
                 throw InvalidParameterException()
             }
             println("ysjie path = $path,baudrate = $baudrate")
-            /* Open the serial port */
+            *//* Open the serial port *//*
             mSerialPort = baudrate?.let { SerialPort(File(path), it, 0) }
-        }
-        return mSerialPort
+        }*/
+        return SerialPort(File("/dev/ttyS8"), 9600, 0)
     }
 
     fun closeSerialPort() {

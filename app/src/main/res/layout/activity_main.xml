@@ -4,48 +4,56 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:gravity="center_vertical|center_horizontal"
+    android:orientation="vertical"
     tools:context=".MainActivity">
-
 
 
     <Button
         android:id="@+id/btnPrefs"
-        android:onClick="openPrefs"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:onClick="openPrefs"
         android:text="Open Prefs" />
 
     <EditText
         android:id="@+id/edtStartAddress"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:paddingHorizontal="20dp"
+        android:hint="Enter Register Start Address"
         android:inputType="number"
-        android:hint="Enter Start Address"
-        android:layout_height="wrap_content"/>
+        android:paddingHorizontal="20dp" />
+
+    <EditText
+        android:id="@+id/edtRegistersCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Enter No. of Registers To Read/Write"
+        android:inputType="number"
+        android:paddingHorizontal="20dp" />
 
     <Button
         android:id="@+id/btnWriteData"
-        android:layout_marginTop="20dp"
-        android:onClick="writeData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:onClick="writeData"
         android:text="Write Data" />
 
     <Button
         android:id="@+id/btnReadData"
-        android:onClick="readData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:onClick="readData"
         android:text="Read Data" />
 
     <TextView
-        android:layout_marginTop="20dp"
         android:id="@+id/txtDataRead"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
         tools:text="Hello World!" />
 
 </LinearLayout>

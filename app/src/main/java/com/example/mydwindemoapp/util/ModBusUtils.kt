@@ -1,5 +1,7 @@
 package com.example.mydwindemoapp.util
 
+import android.util.Log
+
 object ModBusUtils {
 
     //Input Register
@@ -10,32 +12,31 @@ object ModBusUtils {
     private const val READ_HOLDING_REGISTERS_FUNCTION_CODE: Byte = 0x03
     private const val WRITE_SINGLE_REGISTER_FUNCTION_CODE: Byte = 0x06
 
-    private fun calculateCRC(vararg values: Int): Int {
-        var crc = 0xFFFF
-        for (value in values) {
-            crc = crc xor (value and 0xFF)
-            for (i in 0..7) {
-                if (crc and 0x0001 != 0) {
-                    crc = crc shr 1
-                    crc = crc xor 0xA001
-                } else {
-                    crc = crc shr 1
-                }
-            }
-        }
-        return crc
-    }
-
+    /**
+     * This method is used to create request frame for reading input registers
+     * Request frame example:
+     * Slave Address 1
+     * Function 04
+     * Starting Address Hi 00
+     * Starting Address Lo 08
+     * No. of Points Hi 00
+     * No. of Points Lo 01
+     * Error Check (LRC or CRC) ––
+     * */
     fun createReadInputRegistersRequest(
         slaveAddress: Int,
         startAddress: Int,
         quantity: Int
     ): ByteArray {
-        // Calculate CRC (Cyclic Redundancy Check)
-        val crc =
-            calculateCRC(slaveAddress, READ_INPUT_REGISTERS_FUNCTION_CODE.toInt(), startAddress, quantity)
-
-        // Create the Modbus RTU frame
+        val byteArrayBeforeCRC = byteArrayOf(
+            slaveAddress.toByte(),
+            READ_INPUT_REGISTERS_FUNCTION_CODE,
+            (startAddress shr 8).toByte(),
+            startAddress.toByte(),
+            (quantity shr 8).toByte(),
+            quantity.toByte()
+        )
+        val newCRC = calculateCRC(byteArrayBeforeCRC)
         return byteArrayOf(
             slaveAddress.toByte(),
             READ_INPUT_REGISTERS_FUNCTION_CODE,
@@ -43,11 +44,27 @@ object ModBusUtils {
             startAddress.toByte(),
             (quantity shr 8).toByte(),
             quantity.toByte(),
-            (crc and 0xFF).toByte(),
-            (crc shr 8 and 0xFF).toByte()
+            newCRC[0],
+            newCRC[1]
         )
     }
 
+    /**
+     * This method is used to create request frame for writing to multiple registers
+     * Request frame example:
+     * Slave Address 1
+     * Function 10
+     * Starting Address Hi 00
+     * Starting Address Lo 01
+     * No. of Registers Hi 00
+     * No. of Registers Lo 02
+     * Byte Count 04
+     * Data Hi 00
+     * Data Lo 0A
+     * Data Hi 01
+     * Data Lo 02
+     * Error Check (LRC or CRC) ––
+     * */
     fun createWriteMultipleRegistersRequest(
         slaveAddress: Int,
         startAddress: Int,
@@ -55,10 +72,6 @@ object ModBusUtils {
     ): ByteArray {
         val quantity = data.size
         val byteCount = quantity * 2 // Each register is 2 bytes
-        val crc = calculateCRC(
-            slaveAddress,
-            WRITE_MULTIPLE_REGISTERS_FUNCTION_CODE.toInt(), startAddress, quantity, byteCount
-        )
         val frame = ByteArray(9 + byteCount)
         frame[0] = slaveAddress.toByte()
         frame[1] = WRITE_MULTIPLE_REGISTERS_FUNCTION_CODE
@@ -72,54 +85,742 @@ object ModBusUtils {
             frame[7 + 2 * i] = (registerValue shr 8).toByte()
             frame[8 + 2 * i] = registerValue.toByte()
         }
-        frame[frame.size - 2] = (crc and 0xFF).toByte()
-        frame[frame.size - 1] = (crc shr 8 and 0xFF).toByte()
+        val newCRC = calculateCRC(frame)
+
+        frame[frame.size - 2] = newCRC[0]
+        frame[frame.size - 1] = newCRC[1]
+        Log.d("TAG", "createWriteMultipleRegistersRequest: CRC = ${frame.toHex()}")
         return frame
     }
 
-    // Create Modbus RTU frame for reading holding registers
+    /**
+     * This method is used to create request frame for reading holding registers
+     * Request frame example:
+     * Slave Address 1
+     * Function 03
+     * Starting Address Hi 00
+     * Starting Address Lo 6B
+     * No. of Points Hi 00
+     * No. of Points Lo 03
+     * Error Check (LRC or CRC) ––
+     * */
     fun createReadHoldingRegistersRequest(
         slaveAddress: Int,
         startAddress: Int,
         quantity: Int
     ): ByteArray {
-        val crc = calculateCRC(
-            slaveAddress,
-            READ_HOLDING_REGISTERS_FUNCTION_CODE.toInt(), startAddress, quantity
+        val byteArrayBeforeCRC = byteArrayOf(
+            slaveAddress.toByte(),
+            READ_HOLDING_REGISTERS_FUNCTION_CODE,
+            (startAddress shr 8).toByte(),
+            startAddress.toByte(),
+            (quantity shr 8).toByte(),
+            quantity.toByte()
         )
-        return byteArrayOf(
+        val newCRC = calculateCRC(byteArrayBeforeCRC)
+        Log.d("TAG", "createReadHoldingRegistersRequest: NEW CRC = ${newCRC.toHex()}")
+        val finalByteArray = byteArrayOf(
             slaveAddress.toByte(),
             READ_HOLDING_REGISTERS_FUNCTION_CODE,
             (startAddress shr 8).toByte(),
             startAddress.toByte(),
             (quantity shr 8).toByte(),
             quantity.toByte(),
-            (crc and 0xFF).toByte(),
-            (crc shr 8 and 0xFF).toByte()
+            newCRC[0],
+            newCRC[1]
         )
+        Log.d(
+            "TAG",
+            "createReadHoldingRegistersRequest: FINAL BYTE ARRAY TO HEX = ${finalByteArray.toHex()}"
+        )
+        return finalByteArray
     }
 
-    // Create Modbus RTU frame for writing a single holding register
+    /**
+     * This method is used to create request frame for writing to single register
+     * Request frame sample:
+     * Slave Address 1
+     * Function 06
+     * Register Address Hi 00
+     * Register Address Lo 01
+     * Preset Data Hi 00
+     * Preset Data Lo 03
+     * Error Check (LRC or CRC) ––
+     * */
     fun createWriteSingleRegisterRequest(
         slaveAddress: Int,
         registerAddress: Int,
         registerValue: Int
     ): ByteArray {
-        val crc = calculateCRC(
-            slaveAddress,
-            WRITE_SINGLE_REGISTER_FUNCTION_CODE.toInt(), registerAddress, registerValue
+
+        val byteArrayBeforeCRC = byteArrayOf(
+            slaveAddress.toByte(),
+            WRITE_SINGLE_REGISTER_FUNCTION_CODE,
+            (registerAddress shr 8).toByte(),
+            registerAddress.toByte(),
+            (registerValue shr 8).toByte(),
+            registerValue.toByte()
         )
-        return byteArrayOf(
+
+        val newCRC = calculateCRC(byteArrayBeforeCRC)
+        Log.d("TAG", "createWriteSingleRegisterRequest: NEW CRC = ${newCRC.toHex()}")
+
+        val byteArrayWithCRC = byteArrayOf(
             slaveAddress.toByte(),
             WRITE_SINGLE_REGISTER_FUNCTION_CODE,
             (registerAddress shr 8).toByte(),
             registerAddress.toByte(),
             (registerValue shr 8).toByte(),
             registerValue.toByte(),
-            (crc and 0xFF).toByte(),
-            (crc shr 8 and 0xFF).toByte()
+            newCRC[0],
+            newCRC[1]
         )
+        Log.d(
+            "TAG",
+            "createWriteSingleRegisterRequest: BYTE ARRAY OF REQUEST = ${byteArrayWithCRC.toHex()}"
+        )
+        return byteArrayWithCRC
     }
+
+    /**
+     * This method is used to create request frame for writing to single register
+     * Request frame sample:
+     * Slave Address 1
+     * Function 06
+     * Register Address Hi 00
+     * Register Address Lo 01
+     * Preset Data Hi 00
+     * Preset Data Lo 03
+     * Error Check (LRC or CRC) ––
+     * */
+    fun createWriteStringToSingleRegisterRequest(
+        slaveAddress: Int,
+        registerAddress: Int,
+        inputString: String
+    ): ByteArray {
+
+        val binaryData = inputString.toByteArray(Charsets.UTF_8)
+
+        // Assuming a single holding register stores 16 bits (2 bytes)
+        val registerValue = if (binaryData.size >= 2) {
+            val highByte = binaryData[1].toInt() and 0xFF
+            val lowByte = binaryData[0].toInt() and 0xFF
+            (highByte shl 8) or lowByte
+        } else {
+            // If the string is shorter than 2 bytes, pad with 0
+            (binaryData.getOrNull(0)?.toInt()?.and(0xFF)) ?: 0
+        }
+
+        val byteArrayBeforeCRC = byteArrayOf(
+            slaveAddress.toByte(),
+            WRITE_SINGLE_REGISTER_FUNCTION_CODE,
+            (registerAddress shr 8).toByte(),
+            registerAddress.toByte(),
+            (registerValue shr 8).toByte(),
+            registerValue.toByte()
+        )
+
+        val newCRC = calculateCRC(byteArrayBeforeCRC)
+        Log.d("TAG", "createWriteSingleRegisterRequest: NEW CRC = ${newCRC.toHex()}")
+
+        val byteArrayWithCRC = byteArrayOf(
+            slaveAddress.toByte(),
+            WRITE_SINGLE_REGISTER_FUNCTION_CODE,
+            (registerAddress shr 8).toByte(),
+            registerAddress.toByte(),
+            (registerValue shr 8).toByte(),
+            registerValue.toByte(),
+            newCRC[0],
+            newCRC[1]
+        )
+        Log.d(
+            "TAG",
+            "createWriteSingleRegisterRequest: BYTE ARRAY OF REQUEST = ${byteArrayWithCRC.toHex()}"
+        )
+        return byteArrayWithCRC
+    }
+
+    /**
+     * This method is used to calculate CRC for given request frame
+     * */
+    private fun calculateCRC(
+        data: ByteArray,
+        startByte: Int = 0
+    ): ByteArray {
+        val auchCRCHi = byteArrayOf(
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64,
+            1,
+            -64,
+            -128,
+            65,
+            1,
+            -64,
+            -128,
+            65,
+            0,
+            -63,
+            -127,
+            64
+        )
+        val auchCRCLo = byteArrayOf(
+            0,
+            -64,
+            -63,
+            1,
+            -61,
+            3,
+            2,
+            -62,
+            -58,
+            6,
+            7,
+            -57,
+            5,
+            -59,
+            -60,
+            4,
+            -52,
+            12,
+            13,
+            -51,
+            15,
+            -49,
+            -50,
+            14,
+            10,
+            -54,
+            -53,
+            11,
+            -55,
+            9,
+            8,
+            -56,
+            -40,
+            24,
+            25,
+            -39,
+            27,
+            -37,
+            -38,
+            26,
+            30,
+            -34,
+            -33,
+            31,
+            -35,
+            29,
+            28,
+            -36,
+            20,
+            -44,
+            -43,
+            21,
+            -41,
+            23,
+            22,
+            -42,
+            -46,
+            18,
+            19,
+            -45,
+            17,
+            -47,
+            -48,
+            16,
+            -16,
+            48,
+            49,
+            -15,
+            51,
+            -13,
+            -14,
+            50,
+            54,
+            -10,
+            -9,
+            55,
+            -11,
+            53,
+            52,
+            -12,
+            60,
+            -4,
+            -3,
+            61,
+            -1,
+            63,
+            62,
+            -2,
+            -6,
+            58,
+            59,
+            -5,
+            57,
+            -7,
+            -8,
+            56,
+            40,
+            -24,
+            -23,
+            41,
+            -21,
+            43,
+            42,
+            -22,
+            -18,
+            46,
+            47,
+            -17,
+            45,
+            -19,
+            -20,
+            44,
+            -28,
+            36,
+            37,
+            -27,
+            39,
+            -25,
+            -26,
+            38,
+            34,
+            -30,
+            -29,
+            35,
+            -31,
+            33,
+            32,
+            -32,
+            -96,
+            96,
+            97,
+            -95,
+            99,
+            -93,
+            -94,
+            98,
+            102,
+            -90,
+            -89,
+            103,
+            -91,
+            101,
+            100,
+            -92,
+            108,
+            -84,
+            -83,
+            109,
+            -81,
+            111,
+            110,
+            -82,
+            -86,
+            106,
+            107,
+            -85,
+            105,
+            -87,
+            -88,
+            104,
+            120,
+            -72,
+            -71,
+            121,
+            -69,
+            123,
+            122,
+            -70,
+            -66,
+            126,
+            127,
+            -65,
+            125,
+            -67,
+            -68,
+            124,
+            -76,
+            116,
+            117,
+            -75,
+            119,
+            -73,
+            -74,
+            118,
+            114,
+            -78,
+            -77,
+            115,
+            -79,
+            113,
+            112,
+            -80,
+            80,
+            -112,
+            -111,
+            81,
+            -109,
+            83,
+            82,
+            -110,
+            -106,
+            86,
+            87,
+            -105,
+            85,
+            -107,
+            -108,
+            84,
+            -100,
+            92,
+            93,
+            -99,
+            95,
+            -97,
+            -98,
+            94,
+            90,
+            -102,
+            -101,
+            91,
+            -103,
+            89,
+            88,
+            -104,
+            -120,
+            72,
+            73,
+            -119,
+            75,
+            -117,
+            -118,
+            74,
+            78,
+            -114,
+            -113,
+            79,
+            -115,
+            77,
+            76,
+            -116,
+            68,
+            -124,
+            -123,
+            69,
+            -121,
+            71,
+            70,
+            -122,
+            -126,
+            66,
+            67,
+            -125,
+            65,
+            -127,
+            -128,
+            64
+        )
+        var usDataLen = data.size.toShort()
+        var uchCRCHi: Byte = -1
+        var uchCRCLo: Byte = -1
+        var i = 0
+        while (usDataLen > 0) {
+            --usDataLen
+            var uIndex = uchCRCLo.toInt() xor data[i + startByte].toInt()
+            if (uIndex < 0) {
+                uIndex += 256
+            }
+            uchCRCLo = (uchCRCHi.toInt() xor auchCRCHi[uIndex].toInt()).toByte()
+            uchCRCHi = auchCRCLo[uIndex]
+            ++i
+        }
+        return byteArrayOf(uchCRCLo, uchCRCHi)
+    }
+
+    /**
+     * This method is used to convert the ModBus RTU response frame into readable string
+     * Response frame example: 01 10 00 02 00 02 04 00 09 00 04
+     * */
+    fun convertModbusReadHoldingRegistersResponse(response: ByteArray): String {
+        if (response.size < 3) {
+            return "Invalid response length"
+        }
+
+        // Extract relevant information
+        val slaveAddress = response[0].toInt() and 0xFF
+        val functionCode = response[1].toInt() and 0xFF
+        val byteCount = response[2].toInt() and 0xFF
+
+        // Check if the response length is as expected
+        if (response.size < 3 + byteCount) {
+            return "Invalid response length"
+        }
+
+        // Extract register values
+        val registerValues = mutableListOf<Int>()
+        for (i in 3 until 3 + byteCount step 2) {
+            val highByte = response[i].toInt() and 0xFF
+            val lowByte = response[i + 1].toInt() and 0xFF
+            val registerValue = (highByte shl 8) or lowByte
+            registerValues.add(registerValue)
+        }
+
+        // Create a readable string
+        val readableString = buildString {
+            append("Slave Address: $slaveAddress\n")
+            append("Function Code: $functionCode\n")
+            append("Number of Registers: ${registerValues.size}\n")
+            append("Register Values: ${registerValues.joinToString(", ")}")
+        }
+
+        return readableString
+    }
+
+    fun ByteArray.toHex(): String =
+        joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 
     private fun littleEndianConversion(bytes: ByteArray): Int {
         var result = 0
