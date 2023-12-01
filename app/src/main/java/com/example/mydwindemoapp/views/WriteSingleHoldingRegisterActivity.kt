@@ -29,23 +29,10 @@ class WriteSingleHoldingRegisterActivity : SerialPortBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_write_single_holding_register)
         supportActionBar?.title = "Write Single Holding Register"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         txtDataRead = findViewById(R.id.txtDataRead)
         edtStartAddress = findViewById(R.id.edtStartAddress)
         edtRegistersCount = findViewById(R.id.edtRegistersCount)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                // Handle the Up button press (navigate up or any custom action)
-                finish()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     private suspend fun writeToSingleHoldingRegister(startAddress: Int, regValue: Int) {
@@ -70,7 +57,7 @@ class WriteSingleHoldingRegisterActivity : SerialPortBaseActivity() {
 
         mOutputStream?.write(requestFrame)
 
-        val responseFrame = ByteArray(256)
+        val responseFrame = ByteArray(64)
         val size: Int? = mInputStream?.read(responseFrame)
 
         if (size != null) {

@@ -799,6 +799,7 @@ object ModBusUtils {
      * Response frame example: 01 10 00 02 00 02 04 00 09 00 04
      * */
     fun convertModbusResponseFrameToString(response: ByteArray): String {
+        Log.d("TAG", "convertModbusResponseFrameToString: ${response.toHex()}")
         if (response.size < 3) {
             return "Invalid response length"
         }

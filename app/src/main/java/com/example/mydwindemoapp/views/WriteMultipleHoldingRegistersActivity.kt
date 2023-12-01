@@ -31,23 +31,10 @@ class WriteMultipleHoldingRegistersActivity : SerialPortBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_write_multiple_holding_registers)
         supportActionBar?.title = "Write Multiple Holding Registers"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         txtDataRead = findViewById(R.id.txtDataRead)
         edtStartAddress = findViewById(R.id.edtStartAddress)
         edtRegistersCount = findViewById(R.id.edtRegistersCount)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                // Handle the Up button press (navigate up or any custom action)
-                finish()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     private suspend fun writeToMultipleHoldingRegisters(startAddress: Int, registersCount: Int) {
@@ -63,7 +50,7 @@ class WriteMultipleHoldingRegistersActivity : SerialPortBaseActivity() {
 
         mOutputStream?.write(requestFrame)
 
-        val responseFrame = ByteArray(256)
+        val responseFrame = ByteArray(64)
         val size: Int? = mInputStream?.read(responseFrame)
 
         if (size != null) {

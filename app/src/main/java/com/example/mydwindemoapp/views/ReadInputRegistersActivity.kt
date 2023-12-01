@@ -30,23 +30,10 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_read_input_registers)
         supportActionBar?.title = "Read Input Registers"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         txtDataRead = findViewById(R.id.txtDataRead)
         edtStartAddress = findViewById(R.id.edtStartAddress)
         edtRegistersCount = findViewById(R.id.edtRegistersCount)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                // Handle the Up button press (navigate up or any custom action)
-                finish()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     private suspend fun readInputRegisters(startAddress: Int, quantity: Int){
@@ -55,7 +42,7 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
 
         mOutputStream?.write(requestFrame)
 
-        val responseFrame = ByteArray(256)
+        val responseFrame = ByteArray(14)
         val bytesRead: Int? = mInputStream?.read(responseFrame)
         Log.d("TAG", "readInputRegisters: $bytesRead")
         if (bytesRead != null) {
