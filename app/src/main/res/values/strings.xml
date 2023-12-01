@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyDwinDemoApp</string>
+    <string name="app_name">Android ModBus Demo App</string>
     <string-array name="baudrates_name">
         <item>50</item>
         <item>75</item>

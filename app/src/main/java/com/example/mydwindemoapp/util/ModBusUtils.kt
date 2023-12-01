@@ -4,6 +4,7 @@ import android.util.Log
 
 object ModBusUtils {
 
+
     //Input Register
     private const val READ_INPUT_REGISTERS_FUNCTION_CODE: Byte = 0x04
 
@@ -11,6 +12,7 @@ object ModBusUtils {
     private const val WRITE_MULTIPLE_REGISTERS_FUNCTION_CODE: Byte = 0x10
     private const val READ_HOLDING_REGISTERS_FUNCTION_CODE: Byte = 0x03
     private const val WRITE_SINGLE_REGISTER_FUNCTION_CODE: Byte = 0x06
+
 
     /**
      * This method is used to create request frame for reading input registers
@@ -36,8 +38,10 @@ object ModBusUtils {
             (quantity shr 8).toByte(),
             quantity.toByte()
         )
+        Log.d("TAG", "createReadInputRegistersRequest: HEX BEFORE CRC = ${byteArrayBeforeCRC.toHex()}")
         val newCRC = calculateCRC(byteArrayBeforeCRC)
-        return byteArrayOf(
+        Log.d("TAG", "createReadInputRegistersRequest: NEW CRC = ${newCRC.toHex()}")
+        val finalByteArray = byteArrayOf(
             slaveAddress.toByte(),
             READ_INPUT_REGISTERS_FUNCTION_CODE,
             (startAddress shr 8).toByte(),
@@ -47,6 +51,8 @@ object ModBusUtils {
             newCRC[0],
             newCRC[1]
         )
+        Log.d("TAG", "createReadInputRegistersRequest: FINAL HEX = ${finalByteArray.toHex()}")
+        return finalByteArray
     }
 
     /**
@@ -80,16 +86,21 @@ object ModBusUtils {
         frame[4] = (quantity shr 8).toByte()
         frame[5] = quantity.toByte()
         frame[6] = byteCount.toByte()
-        for (i in 0 until quantity) {
-            val registerValue = data[i]
-            frame[7 + 2 * i] = (registerValue shr 8).toByte()
-            frame[8 + 2 * i] = registerValue.toByte()
+        Log.d("TAG", "createWriteMultipleRegistersRequest: FRAME HEX BEFORE VALUES = ${frame.toHex()}")
+        for (i in data.indices) {
+            val value = data[i]
+            val valueIndex = 7 + 2 * i
+            frame[valueIndex] = (value.toInt() shr 8).toByte() // High byte of register value
+            frame[valueIndex + 1] = value.toByte() // Low byte of register value
         }
-        val newCRC = calculateCRC(frame)
+        Log.d("TAG", "createWriteMultipleRegistersRequest: FRAME HEX AFTER VALUES = ${frame.toHex()}")
+        Log.d("TAG", "createWriteMultipleRegistersRequest: HEX BEFORE CRC = ${frame.toHex()}")
+        val newCRC = calculateCRC(frame.dropLast(2).toByteArray())
+        Log.d("TAG", "createWriteMultipleRegistersRequest: NEW CRC = ${newCRC.toHex()}")
 
         frame[frame.size - 2] = newCRC[0]
         frame[frame.size - 1] = newCRC[1]
-        Log.d("TAG", "createWriteMultipleRegistersRequest: CRC = ${frame.toHex()}")
+        Log.d("TAG", "createWriteMultipleRegistersRequest: FINAL HEX = ${frame.toHex()}")
         return frame
     }
 
@@ -161,7 +172,10 @@ object ModBusUtils {
             (registerValue shr 8).toByte(),
             registerValue.toByte()
         )
-
+        Log.d(
+            "TAG",
+            "createWriteSingleRegisterRequest: HEX BEFORE CRC = ${byteArrayBeforeCRC.toHex()}"
+        )
         val newCRC = calculateCRC(byteArrayBeforeCRC)
         Log.d("TAG", "createWriteSingleRegisterRequest: NEW CRC = ${newCRC.toHex()}")
 
@@ -784,7 +798,7 @@ object ModBusUtils {
      * This method is used to convert the ModBus RTU response frame into readable string
      * Response frame example: 01 10 00 02 00 02 04 00 09 00 04
      * */
-    fun convertModbusReadHoldingRegistersResponse(response: ByteArray): String {
+    fun convertModbusResponseFrameToString(response: ByteArray): String {
         if (response.size < 3) {
             return "Invalid response length"
         }
@@ -830,4 +844,9 @@ object ModBusUtils {
         return result
     }
 
+    fun hexStringToString(hexString: String): String {
+        val hexValues = hexString.split(" ")
+        val byteValues = hexValues.map { it.toInt(16).toByte() }.toByteArray()
+        return String(byteValues, Charsets.UTF_8)
+    }
 }

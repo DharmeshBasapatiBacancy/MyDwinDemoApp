@@ -31,7 +31,10 @@ class App: Application() {
             *//* Open the serial port *//*
             mSerialPort = baudrate?.let { SerialPort(File(path), it, 0) }
         }*/
-        return SerialPort(File("/dev/ttyS8"), 9600, 0)
+        if(mSerialPort == null){
+            mSerialPort = SerialPort(File("/dev/ttyS8"), 9600, 0)
+        }
+        return mSerialPort as SerialPort
     }
 
     fun closeSerialPort() {

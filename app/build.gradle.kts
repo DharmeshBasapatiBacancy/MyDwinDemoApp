@@ -36,8 +36,7 @@ android {
 }
 
 dependencies {
-    implementation(files("libs/EasyModbusJava.jar"))
-    implementation(files("libs/jamod-1.2-SNAPSHOT.jar"))
+
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
