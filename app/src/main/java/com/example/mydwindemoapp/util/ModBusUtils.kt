@@ -6,12 +6,14 @@ object ModBusUtils {
 
 
     //Input Register
-    private const val READ_INPUT_REGISTERS_FUNCTION_CODE: Byte = 0x04
+    const val READ_INPUT_REGISTERS_FUNCTION_CODE: Byte = 0x04
 
     //Holding Register
-    private const val WRITE_MULTIPLE_REGISTERS_FUNCTION_CODE: Byte = 0x10
-    private const val READ_HOLDING_REGISTERS_FUNCTION_CODE: Byte = 0x03
-    private const val WRITE_SINGLE_REGISTER_FUNCTION_CODE: Byte = 0x06
+    const val WRITE_MULTIPLE_REGISTERS_FUNCTION_CODE: Byte = 0x10
+    const val READ_HOLDING_REGISTERS_FUNCTION_CODE: Byte = 0x03
+    const val WRITE_SINGLE_REGISTER_FUNCTION_CODE: Byte = 0x06
+
+    const val METERING_INFO_INPUT_REGISTERS_FRAME = "010400000018F000"
 
 
     /**
@@ -38,7 +40,10 @@ object ModBusUtils {
             (quantity shr 8).toByte(),
             quantity.toByte()
         )
-        Log.d("TAG", "createReadInputRegistersRequest: HEX BEFORE CRC = ${byteArrayBeforeCRC.toHex()}")
+        Log.d(
+            "TAG",
+            "createReadInputRegistersRequest: HEX BEFORE CRC = ${byteArrayBeforeCRC.toHex()}"
+        )
         val newCRC = calculateCRC(byteArrayBeforeCRC)
         Log.d("TAG", "createReadInputRegistersRequest: NEW CRC = ${newCRC.toHex()}")
         val finalByteArray = byteArrayOf(
@@ -53,6 +58,46 @@ object ModBusUtils {
         )
         Log.d("TAG", "createReadInputRegistersRequest: FINAL HEX = ${finalByteArray.toHex()}")
         return finalByteArray
+    }
+
+    fun getACMeterInfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 0,
+        quantity: Int = 24
+    ): ByteArray {
+        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getGunOneDCMeterInfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 50,
+        quantity: Int = 18
+    ): ByteArray {
+        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getGunTwoDCMeterInfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 100,
+        quantity: Int = 18
+    ): ByteArray {
+        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getACChargerACMeterInfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 150,
+        quantity: Int = 24
+    ): ByteArray {
+        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getMiscInfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 0,
+        quantity: Int = 75
+    ): ByteArray{
+        return createReadHoldingRegistersRequest(slaveAddress, startAddress, quantity)
     }
 
     /**
@@ -86,14 +131,20 @@ object ModBusUtils {
         frame[4] = (quantity shr 8).toByte()
         frame[5] = quantity.toByte()
         frame[6] = byteCount.toByte()
-        Log.d("TAG", "createWriteMultipleRegistersRequest: FRAME HEX BEFORE VALUES = ${frame.toHex()}")
+        Log.d(
+            "TAG",
+            "createWriteMultipleRegistersRequest: FRAME HEX BEFORE VALUES = ${frame.toHex()}"
+        )
         for (i in data.indices) {
             val value = data[i]
             val valueIndex = 7 + 2 * i
             frame[valueIndex] = (value.toInt() shr 8).toByte() // High byte of register value
             frame[valueIndex + 1] = value.toByte() // Low byte of register value
         }
-        Log.d("TAG", "createWriteMultipleRegistersRequest: FRAME HEX AFTER VALUES = ${frame.toHex()}")
+        Log.d(
+            "TAG",
+            "createWriteMultipleRegistersRequest: FRAME HEX AFTER VALUES = ${frame.toHex()}"
+        )
         Log.d("TAG", "createWriteMultipleRegistersRequest: HEX BEFORE CRC = ${frame.toHex()}")
         val newCRC = calculateCRC(frame.dropLast(2).toByteArray())
         Log.d("TAG", "createWriteMultipleRegistersRequest: NEW CRC = ${newCRC.toHex()}")

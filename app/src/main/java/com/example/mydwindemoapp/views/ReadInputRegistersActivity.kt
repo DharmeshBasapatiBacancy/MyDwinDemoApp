@@ -1,27 +1,24 @@
 package com.example.mydwindemoapp.views
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
-import android.view.MenuItem
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
-import com.example.mydwindemoapp.App
 import com.example.mydwindemoapp.R
 import com.example.mydwindemoapp.base.SerialPortBaseActivity
+import com.example.mydwindemoapp.util.ModbusReadObserver
 import com.example.mydwindemoapp.util.ModBusUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
 
 class ReadInputRegistersActivity : SerialPortBaseActivity() {
 
+    private lateinit var observer: ModbusReadObserver
     private lateinit var txtDataRead: TextView
     private lateinit var edtStartAddress: EditText
     private lateinit var edtRegistersCount: EditText
@@ -52,10 +49,10 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
         }
     }
 
-    private suspend fun onDataReceived(buffer: ByteArray) {
+    private fun onDataReceived(buffer: ByteArray) {
         val decodeResponse = ModBusUtils.convertModbusResponseFrameToString(buffer)
         Log.d("TAG", "onDataReceived: $decodeResponse")
-        withContext(Dispatchers.Main) {
+        lifecycleScope.launch(Dispatchers.Main) {
             txtDataRead.text = "Data received =\n $decodeResponse"
         }
     }
@@ -64,8 +61,8 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    var address = 1
-                    var quantity = 1
+                    var address = 0
+                    var quantity = 24
                     if(!TextUtils.isEmpty(edtStartAddress.text.toString())){
                         address = edtStartAddress.text.toString().toInt()
                     }
@@ -73,11 +70,19 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
                         quantity = edtRegistersCount.text.toString().toInt()
                     }
 
-                    readInputRegisters(address,quantity)
+                    observer = ModbusReadObserver()
+                    observer.startObserving(ModBusUtils.READ_INPUT_REGISTERS_FUNCTION_CODE,1, address, quantity, mOutputStream, mInputStream) { responseFrameArray ->
+                        onDataReceived(responseFrameArray)
+                    }
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        observer.stopObserving()
     }
 }
