@@ -55,7 +55,7 @@ class ModbusReadObserver {
                         mOutputStream?.write(registerValues)
                     }
 
-                    val responseFrame = ByteArray(64)
+                    val responseFrame = ByteArray(5+(quantity*2))
                     withContext(Dispatchers.IO) {
                         mInputStream?.read(responseFrame)
                     }

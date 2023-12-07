@@ -75,7 +75,6 @@ class ReadHoldingRegistersActivity : SerialPortBaseActivity() {
                     observer.startObserving(READ_HOLDING_REGISTERS_FUNCTION_CODE,1, address, quantity, mOutputStream, mInputStream) { responseFrameArray ->
                         onDataReceived(responseFrameArray)
                     }
-                    observer.stopObserving()
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }

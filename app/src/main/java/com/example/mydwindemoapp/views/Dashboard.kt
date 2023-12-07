@@ -29,4 +29,8 @@ class Dashboard : AppCompatActivity() {
     fun goToWriteMultipleHoldingRegistersScreen(view: View) {
         startActivity(Intent(this,WriteMultipleHoldingRegistersActivity::class.java))
     }
+
+    fun goToReadACMeterInfoScreen(view: View) {
+        startActivity(Intent(this,ReadACMeterInfoActivity::class.java))
+    }
 }

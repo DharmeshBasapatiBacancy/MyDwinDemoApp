@@ -42,7 +42,7 @@ class WriteMultipleHoldingRegistersActivity : SerialPortBaseActivity() {
 
         val dateToWrite = mutableListOf<Int>()
         for (i in 0 until registersCount){
-            dateToWrite.add(i+10)
+            dateToWrite.add(i+20)
         }
 
         val requestFrame: ByteArray =
@@ -50,7 +50,7 @@ class WriteMultipleHoldingRegistersActivity : SerialPortBaseActivity() {
 
         mOutputStream?.write(requestFrame)
 
-        val responseFrame = ByteArray(64)
+        val responseFrame = ByteArray(256)
         val size: Int? = mInputStream?.read(responseFrame)
 
         if (size != null) {

@@ -1,6 +1,8 @@
 package com.example.mydwindemoapp.util
 
 import android.util.Log
+import kotlin.experimental.and
+import kotlin.experimental.or
 
 object ModBusUtils {
 
@@ -850,7 +852,8 @@ object ModBusUtils {
      * Response frame example: 01 10 00 02 00 02 04 00 09 00 04
      * */
     fun convertModbusResponseFrameToString(response: ByteArray): String {
-        Log.d("TAG", "convertModbusResponseFrameToString: ${response.toHex()}")
+        val responseString = response.joinToString(" ") { it.toString() }
+        Log.d("TAG", "convertModbusResponseFrameToString: $responseString")
         if (response.size < 3) {
             return "Invalid response length"
         }
@@ -885,6 +888,35 @@ object ModBusUtils {
         return readableString
     }
 
+    fun getResponseDataInListFromModbusResponse(response: ByteArray): MutableList<Int> {
+        val responseString = response.joinToString(" ") { it.toString() }
+        Log.d("TAG", "convertModbusResponseFrameToString: $responseString")
+        if (response.size < 3) {
+            return mutableListOf()
+        }
+
+        // Extract relevant information
+        val slaveAddress = response[0].toInt() and 0xFF
+        val functionCode = response[1].toInt() and 0xFF
+        val byteCount = response[2].toInt() and 0xFF
+
+        // Check if the response length is as expected
+        if (response.size < 3 + byteCount) {
+            return mutableListOf()
+        }
+
+        // Extract register values
+        val registerValues = mutableListOf<Int>()
+        for (i in 3 until 3 + byteCount step 2) {
+            val highByte = response[i].toInt() and 0xFF
+            val lowByte = response[i + 1].toInt() and 0xFF
+            val registerValue = (highByte shl 8) or lowByte
+            registerValues.add(registerValue)
+        }
+
+        return registerValues
+    }
+
     fun ByteArray.toHex(): String =
         joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 
@@ -900,5 +932,18 @@ object ModBusUtils {
         val hexValues = hexString.split(" ")
         val byteValues = hexValues.map { it.toInt(16).toByte() }.toByteArray()
         return String(byteValues, Charsets.UTF_8)
+    }
+
+    fun validateModbusRtuFrame(frame: ByteArray): Boolean {
+        if (frame.size < 5) {
+            return false
+        }
+
+        val receivedCRC = ((frame[frame.size - 1].toInt() and 0xFF) shl 8) or
+                (frame[frame.size - 2].toInt() and 0xFF)
+
+        val calculatedCrc = calculateCRC(frame.dropLast(2).toByteArray(), 0)
+
+        return byteArrayOf(receivedCRC.toByte()).contentEquals(calculatedCrc)
     }
 }
