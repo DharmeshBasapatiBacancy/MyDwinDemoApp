@@ -32,7 +32,7 @@ class App: Application() {
             mSerialPort = baudrate?.let { SerialPort(File(path), it, 0) }
         }*/
         if(mSerialPort == null){
-            mSerialPort = SerialPort(File("/dev/ttyS8"), 9600, 0)
+            mSerialPort = SerialPort(File("/dev/ttyS8"), 115200, 0)
         }
         return mSerialPort as SerialPort
     }

@@ -55,14 +55,14 @@ class ModbusReadObserver {
                         mOutputStream?.write(registerValues)
                     }
 
-                    val responseFrame = ByteArray(5+(quantity*2))
+                    val responseFrame = ByteArray(256)
                     withContext(Dispatchers.IO) {
                         mInputStream?.read(responseFrame)
                     }
 
                     onResponse(responseFrame)
 
-                    delay(TimeUnit.MILLISECONDS.toMillis(500))
+                    delay(TimeUnit.SECONDS.toMillis(3))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
