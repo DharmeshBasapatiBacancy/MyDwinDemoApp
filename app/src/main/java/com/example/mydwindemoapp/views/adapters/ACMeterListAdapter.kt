@@ -37,42 +37,46 @@ class ACMeterListAdapter(var onItemClick: (ACMeterModel) -> Unit): ListAdapter<A
         fun bind(sampleModel: ACMeterModel){
             binding.apply {
                 incVoltageL1.tvLabel.text = "Voltage L1"
-                incVoltageL1.tvValue.text = sampleModel.voltageL1.toString()
+                incVoltageL1.tvValue.text = sampleModel.voltageL1.formatFloatToString()
 
                 incVoltageL2.tvLabel.text = "Voltage L2"
-                incVoltageL2.tvValue.text = sampleModel.voltageL2.toString()
+                incVoltageL2.tvValue.text = sampleModel.voltageL2.formatFloatToString()
 
                 incVoltageL3.tvLabel.text = "Voltage L3"
-                incVoltageL3.tvValue.text = sampleModel.voltageL3.toString()
+                incVoltageL3.tvValue.text = sampleModel.voltageL3.formatFloatToString()
 
                 incVoltageAvg.tvLabel.text = "Voltage Average"
-                incVoltageAvg.tvValue.text = sampleModel.voltageAverage.toString()
+                incVoltageAvg.tvValue.text = sampleModel.voltageAverage.formatFloatToString()
 
                 incCurrentL1.tvLabel.text = "Current L1"
-                incCurrentL1.tvValue.text = sampleModel.currentL1.toString()
+                incCurrentL1.tvValue.text = sampleModel.currentL1.formatFloatToString()
 
                 incCurrentL2.tvLabel.text = "Current L2"
-                incCurrentL2.tvValue.text = sampleModel.currentL2.toString()
+                incCurrentL2.tvValue.text = sampleModel.currentL2.formatFloatToString()
 
                 incCurrentL3.tvLabel.text = "Current L3"
-                incCurrentL3.tvValue.text = sampleModel.currentL3.toString()
+                incCurrentL3.tvValue.text = sampleModel.currentL3.formatFloatToString()
 
                 incCurrentAvg.tvLabel.text = "Current Average"
-                incCurrentAvg.tvValue.text = sampleModel.currentAverage.toString()
+                incCurrentAvg.tvValue.text = sampleModel.currentAverage.formatFloatToString()
 
                 incTotalKW.tvLabel.text = "Total KW"
-                incTotalKW.tvValue.text = sampleModel.totalKW.toString()
+                incTotalKW.tvValue.text = sampleModel.totalKW.formatFloatToString()
 
                 incTotalKWH.tvLabel.text = "Total KWH"
-                incTotalKWH.tvValue.text = sampleModel.totalKWH.toString()
+                incTotalKWH.tvValue.text = sampleModel.totalKWH.formatFloatToString()
 
                 incFrequency.tvLabel.text = "Frequency"
-                incFrequency.tvValue.text = sampleModel.frequency.toString()
+                incFrequency.tvValue.text = sampleModel.frequency.formatFloatToString()
 
                 incAvgPowerFactor.tvLabel.text = "Average Power Factor"
-                incAvgPowerFactor.tvValue.text = sampleModel.averagePowerFactor.toString()
+                incAvgPowerFactor.tvValue.text = sampleModel.averagePowerFactor.formatFloatToString()
             }
         }
+    }
+
+    fun Float.formatFloatToString(): String{
+        return String.format("%.2f", this)
     }
 
 

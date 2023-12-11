@@ -33,4 +33,8 @@ class Dashboard : AppCompatActivity() {
     fun goToReadACMeterInfoScreen(view: View) {
         startActivity(Intent(this,ReadACMeterInfoActivity::class.java))
     }
+
+    fun goToReadMiscInfoScreen(view: View) {
+        startActivity(Intent(this,ReadMiscInfoActivity::class.java))
+    }
 }

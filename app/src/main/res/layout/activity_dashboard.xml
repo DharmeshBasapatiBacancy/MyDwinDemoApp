@@ -53,4 +53,13 @@
         android:text="Read AC Meter Information"
         android:textColor="@color/white" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/green"
+        android:onClick="goToReadMiscInfoScreen"
+        android:text="Read Misc Information"
+        android:textColor="@color/white" />
+
 </LinearLayout>

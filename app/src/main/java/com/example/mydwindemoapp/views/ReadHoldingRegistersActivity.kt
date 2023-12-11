@@ -72,7 +72,10 @@ class ReadHoldingRegistersActivity : SerialPortBaseActivity() {
                     }
 
                     observer = ModbusReadObserver()
-                    observer.startObserving(READ_HOLDING_REGISTERS_FUNCTION_CODE,1, address, quantity, mOutputStream, mInputStream) { responseFrameArray ->
+                    observer.startObserving(
+                        mOutputStream, mInputStream, 256,
+                        ModBusUtils.createReadHoldingRegistersRequest(1, address, quantity)
+                    ) { responseFrameArray ->
                         onDataReceived(responseFrameArray)
                     }
                 } catch (e: IOException) {

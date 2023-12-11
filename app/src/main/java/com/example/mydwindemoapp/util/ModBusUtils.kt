@@ -70,38 +70,6 @@ object ModBusUtils {
         return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
     }
 
-    fun getGunOneDCMeterInfoRequestFrame(
-        slaveAddress: Int = 1,
-        startAddress: Int = 50,
-        quantity: Int = 18
-    ): ByteArray {
-        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
-    }
-
-    fun getGunTwoDCMeterInfoRequestFrame(
-        slaveAddress: Int = 1,
-        startAddress: Int = 100,
-        quantity: Int = 18
-    ): ByteArray {
-        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
-    }
-
-    fun getACChargerACMeterInfoRequestFrame(
-        slaveAddress: Int = 1,
-        startAddress: Int = 150,
-        quantity: Int = 24
-    ): ByteArray {
-        return createReadInputRegistersRequest(slaveAddress, startAddress, quantity)
-    }
-
-    fun getMiscInfoRequestFrame(
-        slaveAddress: Int = 1,
-        startAddress: Int = 0,
-        quantity: Int = 75
-    ): ByteArray{
-        return createReadHoldingRegistersRequest(slaveAddress, startAddress, quantity)
-    }
-
     /**
      * This method is used to create request frame for writing to multiple registers
      * Request frame example:
@@ -182,7 +150,6 @@ object ModBusUtils {
             quantity.toByte()
         )
         val newCRC = calculateCRC(byteArrayBeforeCRC)
-        Log.d("TAG", "createReadHoldingRegistersRequest: NEW CRC = ${newCRC.toHex()}")
         val finalByteArray = byteArrayOf(
             slaveAddress.toByte(),
             READ_HOLDING_REGISTERS_FUNCTION_CODE,
@@ -888,62 +855,37 @@ object ModBusUtils {
         return readableString
     }
 
-    fun getResponseDataInListFromModbusResponse(response: ByteArray): MutableList<Int> {
-        val responseString = response.joinToString(" ") { it.toString() }
-        Log.d("TAG", "convertModbusResponseFrameToString: $responseString")
-        if (response.size < 3) {
-            return mutableListOf()
-        }
-
-        // Extract relevant information
-        val slaveAddress = response[0].toInt() and 0xFF
-        val functionCode = response[1].toInt() and 0xFF
-        val byteCount = response[2].toInt() and 0xFF
-
-        // Check if the response length is as expected
-        if (response.size < 3 + byteCount) {
-            return mutableListOf()
-        }
-
-        // Extract register values
-        val registerValues = mutableListOf<Int>()
-        for (i in 3 until 3 + byteCount step 2) {
-            val highByte = response[i].toInt() and 0xFF
-            val lowByte = response[i + 1].toInt() and 0xFF
-            val registerValue = (highByte shl 8) or lowByte
-            registerValues.add(registerValue)
-        }
-
-        return registerValues
-    }
-
     fun ByteArray.toHex(): String =
         joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 
-    private fun littleEndianConversion(bytes: ByteArray): Int {
-        var result = 0
-        for (i in bytes.indices) {
-            result = result or (bytes[i].toInt() shl 8 * i)
-        }
-        return result
-    }
+    fun floatArrayToHexString(floatArray: FloatArray): String {
+        val hexStringBuilder = StringBuilder()
 
-    fun hexStringToString(hexString: String): String {
-        val hexValues = hexString.split(" ")
-        val byteValues = hexValues.map { it.toInt(16).toByte() }.toByteArray()
-        return String(byteValues, Charsets.UTF_8)
-    }
-
-    fun validateModbusRtuFrame(frame: ByteArray): Boolean {
-        if (frame.size < 5) {
-            return false
+        for (floatValue in floatArray) {
+            val intBits = floatValue.toBits()
+            val hexString = String.format("%08X", intBits)
+            hexStringBuilder.append(hexString)
         }
 
-        val receivedCRC = ((frame[frame.size - 1].toInt() and 0xFF) shl 8) or
-                (frame[frame.size - 2].toInt() and 0xFF)
+        return hexStringBuilder.toString()
+    }
 
-        val calculatedCrc = calculateCRC(frame.dropLast(2).toByteArray(), 0)
+    fun parseInputRegistersResponse(response: ByteArray): FloatArray {
+        Log.d("TAG", "parseInputRegistersResponse: RESPONSE SIZE = ${response.size}")
+        Log.d("TAG", "parseInputRegistersResponse: RESPONSE HEX = ${response.toHex()}")
+        if(response.toHex().startsWith("0104")){
+            val floatValues = FloatArray(response.size / 4)
 
-        return byteArrayOf(receivedCRC.toByte()).contentEquals(calculatedCrc)
+            for (i in 3..response.size step 4) {
+                if (i < response.size - 4) {
+                    val floatBytes = response.copyOfRange(i, i + 4)
+                    floatValues[i / 4] = ModbusTypeConverter.byteArrayToFloat(floatBytes)
+                }
+
+            }
+
+            return floatValues
+        }
+        return FloatArray(0)
     }
 }

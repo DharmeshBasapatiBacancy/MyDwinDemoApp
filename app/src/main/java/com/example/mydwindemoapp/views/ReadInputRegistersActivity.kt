@@ -33,7 +33,7 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
         edtRegistersCount = findViewById(R.id.edtRegistersCount)
     }
 
-    private suspend fun readInputRegisters(startAddress: Int, quantity: Int){
+    private suspend fun readInputRegisters(startAddress: Int, quantity: Int) {
         val requestFrame: ByteArray =
             ModBusUtils.createReadInputRegistersRequest(1, startAddress, quantity)
 
@@ -63,15 +63,18 @@ class ReadInputRegistersActivity : SerialPortBaseActivity() {
                 try {
                     var address = 0
                     var quantity = 24
-                    if(!TextUtils.isEmpty(edtStartAddress.text.toString())){
+                    if (!TextUtils.isEmpty(edtStartAddress.text.toString())) {
                         address = edtStartAddress.text.toString().toInt()
                     }
-                    if(!TextUtils.isEmpty(edtRegistersCount.text.toString())){
+                    if (!TextUtils.isEmpty(edtRegistersCount.text.toString())) {
                         quantity = edtRegistersCount.text.toString().toInt()
                     }
 
                     observer = ModbusReadObserver()
-                    observer.startObserving(ModBusUtils.READ_INPUT_REGISTERS_FUNCTION_CODE,1, address, quantity, mOutputStream, mInputStream) { responseFrameArray ->
+                    observer.startObserving(
+                        mOutputStream, mInputStream, 256,
+                        ModBusUtils.createReadInputRegistersRequest(1, address, quantity)
+                    ) { responseFrameArray ->
                         onDataReceived(responseFrameArray)
                     }
                 } catch (e: IOException) {

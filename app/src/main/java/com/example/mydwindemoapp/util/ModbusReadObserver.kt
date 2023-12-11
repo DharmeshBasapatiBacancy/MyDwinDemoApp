@@ -15,54 +15,32 @@ import java.util.concurrent.TimeUnit
 
 class ModbusReadObserver {
 
-    private lateinit var registerValues: ByteArray
     private val scope = CoroutineScope(Dispatchers.IO)
     private var job: Job? = null
 
     fun startObserving(
-        functionCode: Byte,
-        slaveAddress: Int,
-        startAddress: Int,
-        quantity: Int,
         mOutputStream: OutputStream?,
         mInputStream: InputStream?,
+        responseSize: Int,
+        requestFrame: ByteArray,
         onResponse: (ByteArray) -> Unit
     ) {
         job = scope.launch {
             while (isActive) {
                 try {
 
-                    when (functionCode) {
-                        READ_HOLDING_REGISTERS_FUNCTION_CODE -> {
-                            registerValues = ModBusUtils.createReadHoldingRegistersRequest(
-                                slaveAddress,
-                                startAddress,
-                                quantity
-                            )
-
-                        }
-
-                        READ_INPUT_REGISTERS_FUNCTION_CODE -> {
-                            registerValues = ModBusUtils.createReadInputRegistersRequest(
-                                slaveAddress,
-                                startAddress,
-                                quantity
-                            )
-                        }
-                    }
-
                     withContext(Dispatchers.IO) {
-                        mOutputStream?.write(registerValues)
+                        mOutputStream?.write(requestFrame)
                     }
 
-                    val responseFrame = ByteArray(256)
+                    val responseFrame = ByteArray(responseSize)
                     withContext(Dispatchers.IO) {
                         mInputStream?.read(responseFrame)
                     }
 
                     onResponse(responseFrame)
 
-                    delay(TimeUnit.SECONDS.toMillis(3))
+                    delay(TimeUnit.SECONDS.toMillis(1))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

@@ -2,16 +2,16 @@ package com.example.mydwindemoapp.models
 
 data class ACMeterModel(
     val id: Int,
-    val voltageL1: Int,
-    val voltageL2: Int,
-    val voltageL3: Int,
-    val voltageAverage: Int,
-    val currentL1: Int,
-    val currentL2: Int,
-    val currentL3: Int,
-    val currentAverage: Int,
-    val totalKW: Int,
-    val totalKWH: Int,
-    val frequency: Int,
-    val averagePowerFactor: Int
+    val voltageL1: Float,
+    val voltageL2: Float,
+    val voltageL3: Float,
+    val voltageAverage: Float,
+    val currentL1: Float,
+    val currentL2: Float,
+    val currentL3: Float,
+    val currentAverage: Float,
+    val totalKW: Float,
+    val totalKWH: Float,
+    val frequency: Float,
+    val averagePowerFactor: Float
 )
