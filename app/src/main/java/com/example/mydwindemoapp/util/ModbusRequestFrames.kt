@@ -38,7 +38,23 @@ object ModbusRequestFrames {
         slaveAddress: Int = 1,
         startAddress: Int = 0,
         quantity: Int = 75
-    ): ByteArray{
+    ): ByteArray {
+        return ModBusUtils.createReadHoldingRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getGun1InfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 100,
+        quantity: Int = 18
+    ): ByteArray {
+        return ModBusUtils.createReadHoldingRegistersRequest(slaveAddress, startAddress, quantity)
+    }
+
+    fun getGun2InfoRequestFrame(
+        slaveAddress: Int = 1,
+        startAddress: Int = 200,
+        quantity: Int = 18
+    ): ByteArray {
         return ModBusUtils.createReadHoldingRegistersRequest(slaveAddress, startAddress, quantity)
     }
 

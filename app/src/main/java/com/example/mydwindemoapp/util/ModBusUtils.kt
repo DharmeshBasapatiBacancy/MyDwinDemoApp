@@ -855,6 +855,35 @@ object ModBusUtils {
         return readableString
     }
 
+    fun convertModbusResponseFrameToStringSingleElement(response: ByteArray): Int {
+        val responseString = response.joinToString(" ") { it.toString() }
+        Log.d("TAG", "convertModbusResponseFrameToString: $responseString")
+        if (response.size < 3) {
+            return 0
+        }
+
+        // Extract relevant information
+        val slaveAddress = response[0].toInt() and 0xFF
+        val functionCode = response[1].toInt() and 0xFF
+        val byteCount = response[2].toInt() and 0xFF
+
+        // Check if the response length is as expected
+        if (response.size < 3 + byteCount) {
+            return 0
+        }
+
+        // Extract register values
+        val registerValues = mutableListOf<Int>()
+        for (i in 3 until 3 + byteCount step 2) {
+            val highByte = response[i].toInt() and 0xFF
+            val lowByte = response[i + 1].toInt() and 0xFF
+            val registerValue = (highByte shl 8) or lowByte
+            registerValues.add(registerValue)
+        }
+
+        return registerValues[0]
+    }
+
     fun ByteArray.toHex(): String =
         joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 

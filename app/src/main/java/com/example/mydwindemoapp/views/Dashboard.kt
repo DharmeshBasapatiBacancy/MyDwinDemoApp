@@ -3,18 +3,74 @@ package com.example.mydwindemoapp.views
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
+import androidx.lifecycle.lifecycleScope
 import com.example.mydwindemoapp.App
 import com.example.mydwindemoapp.R
+import com.example.mydwindemoapp.base.SerialPortBaseActivity
+import com.example.mydwindemoapp.databinding.ActivityDashboardBinding
+import com.example.mydwindemoapp.util.ModBusUtils
+import com.example.mydwindemoapp.util.ModbusReadObserver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-class Dashboard : AppCompatActivity() {
+class Dashboard : SerialPortBaseActivity() {
+
+    private lateinit var binding: ActivityDashboardBinding
+    private lateinit var observer: ModbusReadObserver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_dashboard)
+        binding = ActivityDashboardBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        supportActionBar?.title = "Dashboard"
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        readChargeConfiguration()
+    }
+    fun readChargeConfiguration() {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    var address = 436
+                    var quantity = 1
+                    observer = ModbusReadObserver()
+                    observer.startObserving(
+                        mOutputStream, mInputStream, 16,
+                        ModBusUtils.createReadHoldingRegistersRequest(1, address, quantity)
+                    ) { responseFrameArray ->
+                        onDataReceived(responseFrameArray)
+                    }
+                    delay(3000)
+                    observer.stopObserving()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    private fun onDataReceived(buffer: ByteArray) {
+        val decodeResponse = ModBusUtils.convertModbusResponseFrameToStringSingleElement(buffer)
+        Log.d("TAG", "onDataReceived: $decodeResponse")
+        lifecycleScope.launch(Dispatchers.Main) {
+            when (decodeResponse) {
+                1 -> {
+                    Log.d("TAG", "onDataReceived: SINGLE GUN")
+                    binding.txtDataRead.text = "Charge Configuration = Single Gun"
+                }
+                2 -> {
+                    Log.d("TAG", "onDataReceived: DUAL GUN")
+                    binding.txtDataRead.text = "Charge Configuration = Dual Gun"
+                }
+            }
+        }
     }
 
     fun goToReadInputRegisterScreen(view: View) {
@@ -36,5 +92,33 @@ class Dashboard : AppCompatActivity() {
 
     fun goToReadMiscInfoScreen(view: View) {
         startActivity(Intent(this,ReadMiscInfoActivity::class.java))
+    }
+
+    fun goToGun1DCMeterInfoScreen(view: View) {
+        startActivity(Intent(this,ReadGun1DCMeterInfoActivity::class.java))
+    }
+
+    fun goToGun2DCMeterInfoScreen(view: View) {
+        startActivity(Intent(this,ReadGun2DCMeterInfoActivity::class.java))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        observer.stopObserving()
+    }
+
+    fun goToViewNewScreens(view: View) {
+        startActivity(Intent(this,NewScreensActivity::class.java))
+    }
+
+    fun goToReadACChargerACMeterInfoScreen(view: View) {
+        startActivity(Intent(this,ReadACChargerACMeterInfoActivity::class.java))
+    }
+
+    fun goToUseGun1(view: View) {
+        startActivity(Intent(this,Gun1InformationActivity::class.java).putExtra("IS_GUN1",true))
+    }
+    fun goToUseGun2(view: View) {
+        startActivity(Intent(this,Gun1InformationActivity::class.java).putExtra("IS_GUN1",false))
     }
 }
